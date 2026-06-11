@@ -266,6 +266,7 @@ def generate_video():
     resolution = data.get('resolution', 'portrait').lower()
     theme = data.get('theme', 'cyberpunk').lower()
     text_color = data.get('color', 'white').lower()
+    ai_backgrounds = bool(data.get('ai_backgrounds', True))
 
     if not text:
         return jsonify({'error': 'Input text is empty.'}), 400
@@ -309,7 +310,7 @@ def generate_video():
     # Spawn video generation thread
     thread = threading.Thread(
         target=generate_video_pipeline, 
-        args=(task_id, text, engine, voice, speed, volume, silence_ms, resolution, theme, text_color, status_callback)
+        args=(task_id, text, engine, voice, speed, volume, silence_ms, resolution, theme, text_color, ai_backgrounds, status_callback)
     )
     thread.daemon = True
     thread.start()

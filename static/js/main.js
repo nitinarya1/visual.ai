@@ -20,6 +20,7 @@ const btnAspectPortrait = document.getElementById('btn-aspect-portrait');
 const btnAspectLandscape = document.getElementById('btn-aspect-landscape');
 const themeSelect = document.getElementById('theme-select');
 const colorSelect = document.getElementById('color-select');
+const aiBackgroundsToggle = document.getElementById('ai-backgrounds-toggle');
 
 const mainTitle = document.getElementById('main-title');
 const mainSubtitle = document.getElementById('main-subtitle');
@@ -433,6 +434,7 @@ async function startSynthesis() {
             payload.resolution = currentAspect;
             payload.theme = themeSelect.value;
             payload.color = colorSelect.value;
+            payload.ai_backgrounds = aiBackgroundsToggle.checked;
         }
 
         const response = await fetch(endpoint, {

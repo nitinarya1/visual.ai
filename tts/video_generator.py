@@ -5,6 +5,9 @@ import time
 import shutil
 import traceback
 import wave
+from io import BytesIO
+import urllib.parse
+import requests
 from PIL import Image, ImageDraw, ImageFont
 import imageio_ffmpeg
 
@@ -45,6 +48,50 @@ def draw_gradient(width, height, color1, color2):
     
     return Image.composite(top, base, mask)
 
+def extract_keywords(text):
+    """
+    Extracts descriptive keywords from scene narration by filtering stop words.
+    """
+    # Clean non-alphanumeric characters and convert to lowercase
+    clean_text = re.sub(r'[^a-zA-Z\s]', '', text).lower()
+    words = clean_text.split()
+    
+    # Stop words list for English and Hindi (Hinglish)
+    stop_words = {
+        'the', 'is', 'a', 'of', 'and', 'to', 'in', 'that', 'it', 'he', 'was', 'for', 'on', 'are', 'as', 'with', 'his', 'they', 'i', 
+        'kya', 'aap', 'jaante', 'hain', 'naam', 'mera', 'hum', 'aaj', 'video', 'ko', 'hi', 'bhi', 'ek', 'se', 'par', 'kar', 'de', 'deta',
+        'aur', 'ye', 'yeh', 'hai', 'bhai', 'dosto', 'dost', 'yaar', 'sab', 'sabhi', 'karne', 'hua', 'hota', 'hoti', 'ke', 'ki', 'ka',
+        'singularity', 'gravity', 'infinite', 'physics', 'laws', 'break', 'core', 'black', 'hole', 'called', 'jahan', 'ho', 'jaati'
+    }
+    
+    keywords = [w for w in words if w not in stop_words and len(w) > 2]
+    
+    if not keywords:
+        return "creative,abstract"
+        
+    return ",".join(keywords[:3])
+
+def fetch_background_image(text, width, height):
+    """
+    Attempts to download a matching background image from Pollinations.ai based on scene tags.
+    Returns a PIL Image object if successful, or None on failure (network error / offline / rate limit).
+    """
+    keywords = extract_keywords(text)
+    # Combine keywords with design/aesthetic keywords to guide image generation style
+    prompt = f"{keywords.replace(',', ' ')} digital art cinematic concept art highly detailed 4k resolution"
+    encoded_prompt = urllib.parse.quote(prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true"
+    try:
+        response = requests.get(url, timeout=6)
+        if response.status_code == 200:
+            img = Image.open(BytesIO(response.content))
+            return img.convert('RGB')
+        else:
+            print(f"Warning: Pollinations API returned HTTP {response.status_code} for prompt '{prompt}'")
+    except Exception as e:
+        print(f"Warning: Failed to fetch online visual background: {e}")
+    return None
+
 def wrap_text(text, font, max_width):
     """Wraps text into lines that fit within max_width."""
     words = text.split()
@@ -68,9 +115,10 @@ def wrap_text(text, font, max_width):
         
     return lines
 
-def create_slide_image(text, theme_name, text_color_name, resolution, output_path):
+def create_slide_image(text, theme_name, text_color_name, resolution, output_path, ai_backgrounds=True):
     """
     Renders a captioned image frame representing a single video scene.
+    Uses a relevant online visual background if available and enabled, otherwise falls back to a gradient theme.
     """
     # Resolution parsing (e.g. 1080x1920 or 1920x1080)
     width, height = resolution
@@ -79,8 +127,19 @@ def create_slide_image(text, theme_name, text_color_name, resolution, output_pat
     theme = THEMES.get(theme_name, THEMES['cyberpunk'])
     text_color = COLORS.get(text_color_name, COLORS['white'])
     
-    # Generate background gradient
-    img = draw_gradient(width, height, theme['color1'], theme['color2'])
+    # Try fetching online visual background matching the scene narration if enabled
+    img = None
+    if ai_backgrounds:
+        img = fetch_background_image(text, width, height)
+    
+    if img is None:
+        # Fallback to local linear gradient background
+        img = draw_gradient(width, height, theme['color1'], theme['color2'])
+    else:
+        # Overlay a semi-transparent dark mask to ensure maximum text contrast
+        overlay = Image.new('RGBA', img.size, (0, 0, 0, 140)) # 55% opacity black mask
+        img = Image.alpha_composite(img.convert('RGBA'), overlay).convert('RGB')
+        
     draw = ImageDraw.Draw(img)
     
     # Load Windows standard font path
@@ -229,7 +288,7 @@ def concatenate_clips(clip_paths, output_video_path):
     if process.returncode != 0:
         raise Exception(f"FFmpeg concatenation failed: {stderr.decode('utf-8', errors='ignore')}")
 
-def generate_video_pipeline(task_id, text, engine, voice, speed, volume, silence_ms, resolution_type, theme_name, text_color, update_status_callback):
+def generate_video_pipeline(task_id, text, engine, voice, speed, volume, silence_ms, resolution_type, theme_name, text_color, ai_backgrounds, update_status_callback):
     """
     High-level background pipeline coordinating TTS audio synthesis,
     slide render compilation, scene clip exports, and final MP4 stitching.
@@ -247,7 +306,7 @@ def generate_video_pipeline(task_id, text, engine, voice, speed, volume, silence
             raise ValueError("Text script contains no segments to compile.")
             
         update_status_callback(10, f"Split script into {total_scenes} scenes. Loading speech engine...")
-
+ 
         # 2. Select TTS Engine
         if engine == 'piper':
             generator = PiperGenerator(config.PIPER_BIN_PATH, config.MODELS_DIR)
@@ -261,10 +320,10 @@ def generate_video_pipeline(task_id, text, engine, voice, speed, volume, silence
             voice_model = voice
         else:
             raise ValueError(f"Unsupported engine: {engine}")
-
+ 
         # Determine target resolution: portrait (9:16) for Shorts/Reels, landscape (16:9) for Youtube
         resolution = (1080, 1920) if resolution_type == 'portrait' else (1920, 1080)
-
+ 
         # 3. Compile individual scenes (audio + images -> video clip)
         for idx, chunk_text in enumerate(chunks):
             # Check for cancellation
@@ -304,7 +363,7 @@ def generate_video_pipeline(task_id, text, engine, voice, speed, volume, silence
             clip_duration = duration + (silence_ms / 1000.0)
             
             # B. Render Pillow Captioned Slide Image
-            create_slide_image(chunk_text, theme_name, text_color, resolution, png_path)
+            create_slide_image(chunk_text, theme_name, text_color, resolution, png_path, ai_backgrounds=ai_backgrounds)
             
             # C. Compile Image + Audio into temporary scene MP4 clip
             render_scene_clip(png_path, wav_path, clip_duration, mp4_path)

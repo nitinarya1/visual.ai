@@ -326,6 +326,62 @@ select:focus {
     border-top: 1px solid var(--border-color);
 }
 
+.sidebar-footer {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-footer .copyright-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.sidebar-footer .copyright-info strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.sidebar-footer .owner-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.sidebar-footer .owner-info span {
+    color: var(--text-light, #f3f4f6);
+    font-weight: 500;
+}
+
+.sidebar-footer .social-links {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.sidebar-footer .social-links a {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.sidebar-footer .social-links a:hover {
+    color: var(--text-light, #ffffff);
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
 /* Main Content Styling */
 .main-content {
     padding: 32px 40px;

@@ -1,14 +1,21 @@
+# Python virtual environment
 venv/
+.venv/
 __pycache__/
-**/__pycache__/
+*.pyc
+
+# Heavy executables and binaries
+bin/
+
+# Big AI voice models
 models/
+
+# Temporary and upload directories
 temp/
-output/
 uploads/
-temp_test/
-*.wav
+
+# Generated outputs
+output/
 *.mp3
 *.mp4
-.vscode/
-.idea/
-.DS_Store
+*.wav

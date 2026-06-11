@@ -1,5 +1,5 @@
 # setup_env.ps1
-# Automated Setup Script for Vocalis (Offline Text-to-Speech)
+# Automated Setup Script for NIYA (Offline Text-to-Speech)
 
 $ErrorActionPreference = "Stop"
 

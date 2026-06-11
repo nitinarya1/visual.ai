@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+**/__pycache__/
+models/
+temp/
+output/
+uploads/
+temp_test/
+*.wav
+*.mp3
+*.mp4
+.vscode/
+.idea/
+.DS_Store

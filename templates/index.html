@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Personal Text-to-Speech</title>
+    <!-- Google Fonts: Outfit and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar: Settings & System Telemetry -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-volume-high logo-icon"></i>
+                    <span>Vocalis</span>
+                </div>
+                <span class="badge offline-badge"><i class="fa-solid fa-wifi-slash"></i> Offline</span>
+            </div>
+
+            <!-- Configuration Form -->
+            <div class="config-panel">
+                <h3><i class="fa-solid fa-sliders"></i> Creation Mode</h3>
+                
+                <!-- Mode Toggle -->
+                <div class="form-group">
+                    <div class="mode-toggle">
+                        <button type="button" id="btn-mode-audio" class="toggle-btn active" data-mode="audio">
+                            <i class="fa-solid fa-music"></i> Audio MP3
+                        </button>
+                        <button type="button" id="btn-mode-video" class="toggle-btn" data-mode="video">
+                            <i class="fa-solid fa-video"></i> Video MP4
+                        </button>
+                    </div>
+                </div>
+
+                <h3><i class="fa-solid fa-sliders"></i> Synthesis Options</h3>
+                
+                <!-- Engine Selection -->
+                <div class="form-group">
+                    <label>Speech Engine</label>
+                    <div class="engine-toggle">
+                        <button type="button" id="btn-engine-piper" class="toggle-btn active" data-engine="piper">
+                            <i class="fa-solid fa-wind"></i> Piper
+                        </button>
+                        <button type="button" id="btn-engine-kokoro" class="toggle-btn" data-engine="kokoro">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Kokoro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Voice Selection -->
+                <div class="form-group">
+                    <label for="voice-select">Voice Model</label>
+                    <div class="select-wrapper">
+                        <select id="voice-select">
+                            <!-- Dynamically loaded -->
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    </div>
+                    <span id="voice-info-help" class="help-text"></span>
+                </div>
+
+                <!-- Rate / Speed Selection -->
+                <div class="form-group">
+                    <div class="slider-header">
+                        <label for="speed-slider">Speaking Rate</label>
+                        <span id="speed-value" class="slider-val">1.0x</span>
+                    </div>
+                    <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.1" value="1.0" class="styled-slider">
+                    <div class="slider-labels">
+                        <span>Slow</span>
+                        <span>Normal</span>
+                        <span>Fast</span>
+                    </div>
+                </div>
+
+                <!-- Volume Control -->
+                <div class="form-group">
+                    <div class="slider-header">
+                        <label for="volume-slider">Volume Boost</label>
+                        <span id="volume-value" class="slider-val">1.0x</span>
+                    </div>
+                    <input type="range" id="volume-slider" min="0.2" max="2.0" step="0.1" value="1.0" class="styled-slider">
+                    <div class="slider-labels">
+                        <span>Quiet</span>
+                        <span>Standard</span>
+                        <span>Loud</span>
+                    </div>
+                </div>
+
+                <!-- Silence Between Chunks -->
+                <div class="form-group">
+                    <div class="slider-header">
+                        <label for="silence-slider">Chunk Pause (Silence)</label>
+                        <span id="silence-value" class="slider-val">0.5s</span>
+                    </div>
+                    <input type="range" id="silence-slider" min="0" max="2000" step="100" value="500" class="styled-slider">
+                    <div class="slider-labels">
+                        <span>None</span>
+                        <span>0.5s</span>
+                        <span>2.0s</span>
+                    </div>
+                </div>
+
+                <!-- Video Creator Settings (Shown only in Video mode) -->
+                <div id="video-settings-group" class="video-settings-group hidden">
+                    <h3><i class="fa-solid fa-clapperboard"></i> Video Layout Settings</h3>
+                    
+                    <!-- Aspect Ratio -->
+                    <div class="form-group">
+                        <label>Video Format</label>
+                        <div class="aspect-toggle">
+                            <button type="button" id="btn-aspect-portrait" class="toggle-btn active" data-aspect="portrait">
+                                <i class="fa-solid fa-mobile-screen-button"></i> 9:16 Portrait
+                            </button>
+                            <button type="button" id="btn-aspect-landscape" class="toggle-btn" data-aspect="landscape">
+                                <i class="fa-solid fa-laptop"></i> 16:9 Landscape
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Theme Selection -->
+                    <div class="form-group">
+                        <label for="theme-select">Background Theme</label>
+                        <div class="select-wrapper">
+                            <select id="theme-select">
+                                <option value="cyberpunk" selected>Cyberpunk (Deep Purple)</option>
+                                <option value="midnight">Midnight (Dark Slate)</option>
+                                <option value="oceanic">Oceanic (Navy/Steel Blue)</option>
+                                <option value="forest">Forest (Teal/Dark Green)</option>
+                                <option value="crimson">Crimson (Deep Charcoal/Red)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- Caption Color -->
+                    <div class="form-group">
+                        <label for="color-select">Caption Text Color</label>
+                        <div class="select-wrapper">
+                            <select id="color-select">
+                                <option value="white" selected>Bright White</option>
+                                <option value="yellow">Golden Yellow</option>
+                                <option value="cyan">Neon Cyan</option>
+                                <option value="green">Emerald Green</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Monitor Telemetry -->
+            <div class="telemetry-panel">
+                <h3><i class="fa-solid fa-gauge-high"></i> System Monitor</h3>
+                
+                <!-- RAM Health -->
+                <div class="telemetry-item">
+                    <div class="telemetry-meta">
+                        <span>RAM Usage</span>
+                        <span id="ram-text">-- GB / -- GB</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="ram-progress" class="progress-bar-fill green-gradient" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Storage Health -->
+                <div class="telemetry-item">
+                    <div class="telemetry-meta">
+                        <span>Disk Free Space</span>
+                        <span id="disk-text">-- GB free</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="disk-progress" class="progress-bar-fill blue-gradient" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="hardware-hint">
+                    <i class="fa-solid fa-circle-info"></i> Optimized for Dell Latitude 7470 CPU
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Body: Input Editor & Actions -->
+        <main class="main-content">
+            <!-- Alert banner for setup issues -->
+            <div id="setup-alert" class="alert-banner hidden">
+                <div class="alert-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="alert-body">
+                    <h4>Engine Configuration Required</h4>
+                    <p id="setup-alert-text">Voice models or executables are missing. Syntheses may fail.</p>
+                </div>
+            </div>
+
+            <div class="workspace-header">
+                <h1 id="main-title">Offline Text-to-Speech Reader</h1>
+                <p id="main-subtitle">Read long texts (up to 3,000 words) completely offline without cloud tracking.</p>
+            </div>
+
+            <!-- Input Section -->
+            <div class="editor-card">
+                <div class="editor-header">
+                    <div class="editor-tabs">
+                        <button type="button" class="tab-btn active"><i class="fa-solid fa-pen-to-square"></i> Input Text</button>
+                    </div>
+                    <div class="word-counter">
+                        <span id="char-count">0</span> chars | <span id="word-count">0</span> words (3,000 max)
+                    </div>
+                </div>
+
+                <!-- Textarea + Drag overlay -->
+                <div class="textarea-container" id="drop-zone">
+                    <textarea id="text-input" placeholder="Type or paste your text here, or drag and drop a .txt file..."></textarea>
+                    
+                    <div class="drag-overlay">
+                        <i class="fa-solid fa-file-arrow-up drag-icon"></i>
+                        <p>Drop your TXT file here to load text</p>
+                    </div>
+                </div>
+
+                <div class="editor-footer">
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="file-uploader" accept=".txt">
+                        <label for="file-uploader" class="secondary-btn">
+                            <i class="fa-solid fa-file-import"></i> Upload Text File
+                        </label>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button type="button" id="btn-clear" class="btn-clean">
+                            <i class="fa-solid fa-trash-can"></i> Clear
+                        </button>
+                        <button type="button" id="btn-generate" class="primary-btn">
+                            <i class="fa-solid fa-circle-play"></i> Generate Speech
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status & Player Outputs -->
+            <div id="output-card" class="output-card hidden">
+                <!-- Status Container -->
+                <div id="status-container" class="status-container">
+                    <div class="status-header">
+                        <div class="status-indicator-group">
+                            <div class="spinner" id="status-spinner"></div>
+                            <i class="fa-solid fa-circle-check completed-icon hidden" id="status-success-icon"></i>
+                            <i class="fa-solid fa-circle-exclamation error-icon hidden" id="status-error-icon"></i>
+                            <h3 id="status-title">Processing...</h3>
+                        </div>
+                        <span id="elapsed-time" class="time-label">0.0s</span>
+                    </div>
+
+                    <p id="status-msg" class="status-message">Parsing input...</p>
+
+                    <!-- Waveform Animation -->
+                    <div class="wave-animation-container hidden" id="wave-visual">
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                        <span class="stroke"></span>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-bg">
+                            <div id="status-progress-fill" class="progress-bar-fill purple-gradient" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-labels">
+                            <span id="status-percentage">0%</span>
+                            <span id="chunk-counter" class="hidden">Chunk 0 / 0</span>
+                        </div>
+                    </div>
+
+                    <div class="cancel-wrapper">
+                        <button type="button" id="btn-cancel" class="cancel-btn">
+                            <i class="fa-solid fa-ban"></i> Cancel Synthesis
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Finished Player Container -->
+                <div id="player-container" class="player-container hidden">
+                    <h3 id="player-title"><i class="fa-solid fa-waveform-lines"></i> Synthesized Audio Output</h3>
+                    
+                    <!-- Audio Player Wrapper -->
+                    <div id="audio-player-wrapper" class="player-wrapper">
+                        <audio id="audio-player" controls></audio>
+                    </div>
+
+                    <!-- Video Player Wrapper (Hidden by default) -->
+                    <div id="video-player-wrapper" class="player-wrapper video-player-wrapper hidden">
+                        <video id="video-player" controls></video>
+                    </div>
+
+                    <div class="player-actions">
+                        <button type="button" id="btn-play-custom" class="secondary-btn">
+                            <i class="fa-solid fa-play"></i> Play
+                        </button>
+                        <a id="btn-download" href="#" class="primary-btn">
+                            <i class="fa-solid fa-download"></i> Download File
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Client Javascript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
